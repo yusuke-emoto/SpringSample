@@ -11,13 +11,13 @@ import org.springframework.stereotype.Repository;
 import com.example.demo.login.domain.model.User;
 import com.example.demo.login.domain.repository.UserDao;
 
-@Repository
+@Repository("UserDaoJdbcImpl")
 public class UserDaoJdbcImpl implements UserDao {
 	@Autowired
 	JdbcTemplate jdbc;
 	@Override
 	public int count() throws DataAccessException{
-		int count=jdbc.queryForObject("SELECT COUNT(*) FROM m_user,Integer.class");
+		int count=jdbc.queryForObject("SELECT COUNT(*) FROM m_user",Integer.class);
 		return count;
 	}
 	@Override
@@ -41,7 +41,18 @@ public class UserDaoJdbcImpl implements UserDao {
 	}
 	@Override
 	public User selectOne(String userId) throws DataAccessException{
-		return null;
+		Map<String,Object> map=jdbc.queryForMap("SELECT * FROM m_user"
+				+ " WHERE user_id= ?"
+				, userId);
+		User user=new User();
+		user.setUserId((String)map.get("user_id"));
+		user.setPassword((String)map.get("password"));
+		user.setUserName((String)map.get("user_name"));
+		user.setBirthday((Date)map.get("birthday"));
+		user.setAge((Integer)map.get("age"));
+		user.setMarriage((Boolean)map.get("marriage"));
+		user.setRole((String)map.get("role"));
+		return user;
 	}
 	@Override
 	public List<User> selectMany() throws DataAccessException{
@@ -62,14 +73,36 @@ public class UserDaoJdbcImpl implements UserDao {
 	}
     @Override
     public int updateOne(User user) throws DataAccessException{
-    	return 0;
+    	int rowNumber=jdbc.update("UPDATE M_USER"
+    			+ " SET"
+    			+ " password =?,"
+    			+ " user_name =?,"
+    			+ " birthday =?,"
+    			+ " age =?,"
+    			+ " marriage =?"
+    			+ " WHERE user_id =?"
+    			, user.getPassword()
+    			, user.getUserName()
+    			, user.getBirthday()
+    			, user.getAge()
+    			, user.isMarriage()
+    			, user.getUserId());
+    	//トランザクション確認のため、わざと例外をthrowする
+    	//if(rowNumber>0) {
+    	//	throw new DataAccessException("トランザクションテスト") {};
+    	//}
+    	return rowNumber;
     }
     @Override
     public int deleteOne(String userId) throws DataAccessException{
-    	return 0;
+    	int rowNumber=jdbc.update("DELETE FROM m_user WHERE user_id = ?",userId);
+    	return rowNumber;
     }
     @Override
     public void userCsvOut() throws DataAccessException{
+    	String sql = "SELECT * FROM m_user";
+    	UserRowCallbackHandler handler=new UserRowCallbackHandler();
+    	jdbc.query(sql, handler);
     	
     }
 }
