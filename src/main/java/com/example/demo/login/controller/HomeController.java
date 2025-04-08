@@ -60,6 +60,8 @@ public class HomeController {
 			form.setAge(user.getAge());
 			form.setMarriage(user.isMarriage());
 			model.addAttribute("signupForm",form);
+			
+			
 		}
 		return "login/homeLayout";
 	}
